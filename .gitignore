@@ -1,0 +1,25 @@
+# Dependencies and build output
+node_modules/
+dist/
+
+# Local/private Claude and user notes
+CLAUDE.local.md
+.claude/settings.local.json
+.claude/debug/
+
+# Orchestrator runtime memory and compaction traces
+.myorch/memory/*.jsonl
+.myorch/backups/
+.myorch/handover/
+.myorch/cache/
+.myorch/scenarios/
+
+# Local backups created during development
+.claude.backup-*/
+.codex.backup-*/
+.myorch.backup-*/
+*.backup-*/
+
+# Reports and logs that may contain machine/user-specific evidence
+verification-report.md
+*.log
