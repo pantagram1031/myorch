@@ -9,20 +9,31 @@
 - Codex CLI installed and authenticated.
 - `ccusage` available through `ccusage` or `npx ccusage`.
 
-### Install
+### Install For Any Project
+
+```powershell
+npm install -g github:pantagram1031/myorch
+cd your-project
+myorch init
+claude
+```
+
+Then type in Claude Code:
+
+```text
+/goal "add a simple function"
+```
+
+No separate build command is needed. The npm `prepare` script runs `npm run build` during git/global install.
+
+### Local Development Install
 
 ```powershell
 git clone https://github.com/pantagram1031/myorch.git
 cd myorch
 npm install
-npm run build
 npm run verify:all
-```
-
-Then open the folder in Claude Code and run:
-
-```text
-/goal add a simple function
+npm install -g .
 ```
 
 ### Optional Notification Setup
@@ -44,20 +55,31 @@ If BurntToast is not installed, myorch logs notification attempts and falls back
 - Codex CLI 설치 및 로그인.
 - `ccusage` 또는 `npx ccusage` 사용 가능.
 
-### 설치
+### 아무 프로젝트에 적용하기
+
+```powershell
+npm install -g github:pantagram1031/myorch
+cd your-project
+myorch init
+claude
+```
+
+Claude Code에서 다음을 입력하세요.
+
+```text
+/goal "add a simple function"
+```
+
+별도 build 명령은 필요 없습니다. npm `prepare` 스크립트가 git/global install 중 `npm run build`를 실행합니다.
+
+### 로컬 개발 설치
 
 ```powershell
 git clone https://github.com/pantagram1031/myorch.git
 cd myorch
 npm install
-npm run build
 npm run verify:all
-```
-
-그 다음 Claude Code에서 폴더를 열고 실행합니다.
-
-```text
-/goal add a simple function
+npm install -g .
 ```
 
 ### 알림 설정
@@ -68,4 +90,4 @@ Windows toast 알림을 원하면:
 Install-Module BurntToast -Scope CurrentUser
 ```
 
-BurntToast가 없으면 myorch는 알림 시도를 로그로 남기고 console/beep으로 폴백합니다.
+BurntToast가 없으면 myorch는 알림 시도를 로그에 남기고 console/beep으로 대체합니다.

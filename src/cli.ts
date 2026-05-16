@@ -14,6 +14,7 @@ import { readCcusage as readCcusageData } from "./ccusage.js";
 import { executeRoutedTask, runAutomatedMetareview } from "./orchestration.js";
 import { createCompactBackup, recordCompactEvent, restoreLatestHandover } from "./compact.js";
 import { recordNotificationAttempt, shouldNotify } from "./notify.js";
+import { initProject } from "./init.js";
 import type { TaskKind } from "./types.js";
 
 const cwd = process.cwd();
@@ -21,6 +22,9 @@ const cwd = process.cwd();
 async function main(): Promise<void> {
   const [command, ...args] = process.argv.slice(2);
   switch (command) {
+    case "init":
+      await initCommand(args);
+      break;
     case "route":
       await routeCommand(args);
       break;
@@ -82,9 +86,14 @@ async function main(): Promise<void> {
       await runCurrentVerifier();
       break;
     default:
-      console.log("usage: myorch <goal-start|route|handoff|execute-routed|metareview-auto|compact-backup|compact-record|compact-restore|statusline|notify|next|status|switch|verify-and-advance|guard-plan-edit|verify-claude-files|verify-claude-runtime|run-verifier>");
+      console.log("usage: myorch <init|goal-start|route|handoff|execute-routed|metareview-auto|compact-backup|compact-record|compact-restore|statusline|notify|next|status|switch|verify-and-advance|guard-plan-edit|verify-claude-files|verify-claude-runtime|run-verifier>");
       process.exitCode = command ? 1 : 0;
   }
+}
+
+async function initCommand(args: string[]): Promise<void> {
+  const result = await initProject(cwd, { force: args.includes("--force") });
+  console.log(JSON.stringify(result, null, 2));
 }
 
 async function routeCommand(args: string[]): Promise<void> {

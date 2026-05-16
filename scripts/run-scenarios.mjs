@@ -1,6 +1,6 @@
 import { mkdtemp, cp, rm, readFile, writeFile, mkdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { delimiter, join } from "node:path";
 import { spawn } from "node:child_process";
 
 const root = process.cwd();
@@ -179,6 +179,58 @@ try {
     return { log: matches.join("\n") };
   });
 
+  await scenario("scenario11-global-init-e2e", async () => {
+    const prefix = join(scenarioRoot, "global-prefix");
+    const target = join(scenarioRoot, "fresh-target");
+    const npmCache = join(scenarioRoot, "npm-cache");
+    const installSource = process.env.MYORCH_SCENARIO11_INSTALL_SOURCE ?? ".";
+    await mkdir(prefix, { recursive: true });
+    await mkdir(target, { recursive: true });
+    await mkdir(npmCache, { recursive: true });
+
+    await runAt("npm", ["install", "-g", installSource, "--prefix", prefix], work, { npm_config_cache: npmCache }, { timeoutMs: 180000 });
+    const myorchBin = process.platform === "win32" ? join(prefix, "myorch.cmd") : join(prefix, "bin", "myorch");
+    const pathEnv = { PATH: `${process.platform === "win32" ? prefix : join(prefix, "bin")}${delimiter}${process.env.PATH ?? ""}` };
+
+    const firstInit = await runQuotedAt(myorchBin, ["init"], target, pathEnv, { timeoutMs: 60000 });
+    const claudeMd = await readFile(join(target, "CLAUDE.md"), "utf8");
+    const gitignore = await readFile(join(target, ".gitignore"), "utf8");
+    const goal = await readFile(join(target, ".claude", "commands", "goal.md"), "utf8");
+    const myorchRules = await readFile(join(target, ".claude", "myorch.md"), "utf8");
+    if (!claudeMd.includes("@.claude/myorch.md")) throw new Error("expected CLAUDE.md import line");
+    if (!gitignore.includes(".myorch/memory/")) throw new Error("expected myorch gitignore entries");
+    if (!goal.includes("myorch route planning")) throw new Error("expected global myorch slash command body");
+    if (!myorchRules.includes("myorch owns this file")) throw new Error("expected myorch-owned rules file");
+
+    await writeFile(join(target, ".claude", "commands", "next.md"), "custom next command\n", "utf8");
+    await writeFile(join(target, ".claude", "myorch.md"), "custom overwritten on init\n", "utf8");
+    const secondInit = await runQuotedAt(myorchBin, ["init"], target, pathEnv, { timeoutMs: 60000 });
+    const updatedClaudeMd = await readFile(join(target, "CLAUDE.md"), "utf8");
+    const next = await readFile(join(target, ".claude", "commands", "next.md"), "utf8");
+    const refreshedMyorchRules = await readFile(join(target, ".claude", "myorch.md"), "utf8");
+    const importCount = updatedClaudeMd.split("@.claude/myorch.md").length - 1;
+    if (importCount !== 1) throw new Error(`expected one CLAUDE.md import, got ${importCount}`);
+    if (next !== "custom next command\n") throw new Error("expected second init to preserve existing command without --force");
+    if (!refreshedMyorchRules.includes("myorch owns this file")) throw new Error("expected second init to refresh .claude/myorch.md");
+
+    await writeFile(join(target, "plan.md"), "- [ ] ??current Fresh global init\n  - Verifier: `node -e \"process.exit(0)\"`\n", "utf8");
+    const status = await runQuotedAt(myorchBin, ["status"], target, pathEnv, { timeoutMs: 60000 });
+    if (!status.includes("Fresh global init")) throw new Error(`expected myorch status to read initialized project plan, got ${status}`);
+
+    const claude = await runQuotedAt("claude", ["-p", "/status", "--output-format", "json"], target, pathEnv, { timeoutMs: 180000 });
+    if (!claude.includes("Fresh global init") && !claude.includes("status")) {
+      throw new Error(`expected claude /status to recognize initialized slash command, got ${claude}`);
+    }
+
+    return {
+      firstInit: summarizeOutput(firstInit),
+      secondInit: summarizeOutput(secondInit),
+      installSource,
+      status,
+      claude: summarizeOutput(claude)
+    };
+  });
+
   await scenario("scenario7-real-codex-smoke", async () => {
     const output = await runQuoted("codex", ["exec", "--skip-git-repo-check", "--cd", work, "Return exactly: codex-smoke-ok"], {}, { timeoutMs: 180000 });
     if (!output.toLowerCase().includes("codex-smoke-ok")) throw new Error(`expected real codex smoke response, got ${output}`);
@@ -234,10 +286,31 @@ async function run(command, args, env, options = {}) {
   return collect(child, command, args, options);
 }
 
+async function runAt(command, args, cwd, env, options = {}) {
+  const child = spawn(command, args, {
+    cwd,
+    shell: process.platform === "win32",
+    windowsHide: true,
+    env: { ...process.env, ...env }
+  });
+  return collect(child, command, args, options);
+}
+
 async function runQuoted(command, args, env, options = {}) {
   const useShell = process.platform === "win32";
   const child = spawn(useShell ? quoteCommandLine(command, args) : command, useShell ? [] : args, {
     cwd: work,
+    shell: useShell,
+    windowsHide: true,
+    env: { ...process.env, ...env }
+  });
+  return collect(child, command, args, options);
+}
+
+async function runQuotedAt(command, args, cwd, env, options = {}) {
+  const useShell = process.platform === "win32";
+  const child = spawn(useShell ? quoteCommandLine(command, args) : command, useShell ? [] : args, {
+    cwd,
     shell: useShell,
     windowsHide: true,
     env: { ...process.env, ...env }

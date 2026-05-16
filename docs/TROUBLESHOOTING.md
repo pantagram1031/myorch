@@ -22,7 +22,7 @@ npm run build
 npm run verify:claude-files
 ```
 
-Check `.claude/settings.json`. Hooks call built files under `dist/`, so `npm run build` must run first.
+Check `.claude/settings.json`. Hooks should call the global `myorch` command. If that command is missing, reinstall with `npm install -g github:pantagram1031/myorch` or run `npm install -g .` from a local checkout.
 
 ## Statusline Does Not Show Usage
 
@@ -30,7 +30,7 @@ Check:
 
 ```powershell
 ccusage blocks --json
-node dist/src/cli.js statusline
+myorch statusline
 ```
 
 The statusline uses a short timeout and a 5-second cache. If `ccusage` is slow or unavailable, it falls back to cached or empty usage fields.
@@ -41,7 +41,7 @@ Check:
 
 ```powershell
 codex exec --help
-node dist/src/cli.js execute-routed implementation --no-metareview
+myorch execute-routed implementation --no-metareview
 ```
 
 myorch uses `codex exec --skip-git-repo-check --cd <workspace> <prompt>`.

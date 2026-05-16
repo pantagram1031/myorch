@@ -34,7 +34,7 @@ export function buildClaudeSettings(): HookSettings {
           hooks: [
             {
               type: "command",
-              command: "node ${CLAUDE_PROJECT_DIR}/dist/src/cli.js goal-start-hook"
+              command: "myorch goal-start-hook"
             }
           ]
         }
@@ -55,7 +55,7 @@ export function buildClaudeSettings(): HookSettings {
           hooks: [
             {
               type: "command",
-              command: "node ${CLAUDE_PROJECT_DIR}/dist/src/cli.js compact-backup"
+              command: "myorch compact-backup"
             }
           ]
         }
@@ -65,7 +65,7 @@ export function buildClaudeSettings(): HookSettings {
           hooks: [
             {
               type: "command",
-              command: "node ${CLAUDE_PROJECT_DIR}/dist/src/cli.js compact-record"
+              command: "myorch compact-record"
             }
           ]
         }
@@ -76,7 +76,7 @@ export function buildClaudeSettings(): HookSettings {
           hooks: [
             {
               type: "command",
-              command: "powershell -NoProfile -ExecutionPolicy Bypass -File ${CLAUDE_PROJECT_DIR}/scripts/notify.ps1 -Title \"Human input needed\" -Message \"Claude Code permission denied a tool call.\" -Severity warn -Dedup permission-denied -Root ${CLAUDE_PROJECT_DIR}"
+              command: "myorch notify --title \"Human input needed\" --message \"Claude Code permission denied a tool call.\" --severity warn --dedup permission-denied"
             }
           ]
         }
@@ -87,7 +87,7 @@ export function buildClaudeSettings(): HookSettings {
           hooks: [
             {
               type: "command",
-              command: "node ${CLAUDE_PROJECT_DIR}/dist/src/cli.js compact-restore"
+              command: "myorch compact-restore"
             }
           ]
         }
@@ -114,7 +114,7 @@ export function detectManualPlanCheckboxEdit(input: unknown): HookDecision {
   if (!/\- \[[ xX]\]/.test(text)) return { block: false };
   return {
     block: true,
-    reason: "plan.md checkbox edits are blocked. Use node dist/src/cli.js ratchet advance with verifier evidence."
+    reason: "plan.md checkbox edits are blocked. Use myorch ratchet advance with verifier evidence."
   };
 }
 

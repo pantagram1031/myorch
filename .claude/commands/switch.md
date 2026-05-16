@@ -1,16 +1,16 @@
 ---
 description: Set a manual model override (claude or codex)
 argument-hint: "<claude|codex>"
-allowed-tools: Bash(node *)
+allowed-tools: Bash(myorch *)
 ---
 Refer to CLAUDE.md for build/test/style/workflow rules. Do not deviate.
 # /switch
 
-!`node dist/src/cli.js switch "$ARGUMENTS"`
+!`myorch switch "$ARGUMENTS"`
 
 Set a manual model override.
 
 ```bash
-node dist/src/cli.js switch claude
-node dist/src/cli.js switch codex
+myorch switch claude
+myorch switch codex
 ```

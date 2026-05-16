@@ -1,14 +1,14 @@
 ---
 description: Show the current ratchet item and all remaining unchecked items
-allowed-tools: Bash(node *)
+allowed-tools: Bash(myorch *)
 ---
 Refer to CLAUDE.md for build/test/style/workflow rules. Do not deviate.
 # /status
 
-!`node dist/src/cli.js status`
+!`myorch status`
 
 Show the current ratchet item and remaining unchecked items.
 
 ```bash
-node dist/src/cli.js status
+myorch status
 ```

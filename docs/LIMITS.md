@@ -16,6 +16,10 @@ Manual `/compact <focus>` can use project `CLAUDE.md` and the user's focus hint.
 
 myorch targets Windows native with PowerShell and Git Bash. WSL, macOS, and Linux may work with small adjustments, but are not the primary tested path.
 
+## Global CLI Assumption
+
+Project slash commands and hooks call `myorch` directly. This depends on the npm global shim being on PATH after `npm install -g github:pantagram1031/myorch` or `npm install -g .`; myorch does not currently generate a `node $(npm root -g)` fallback command inside initialized projects.
+
 ## ccusage Semantics
 
 Real `ccusage blocks --json` does not expose a per-model subscription limit. myorch treats active Claude 5-hour block elapsed percent as a practical pressure signal, while keeping synthetic model limit parsing for tests and future richer providers.

@@ -1,6 +1,6 @@
 ---
 description: Pause automatic ratchet progression and record state to .myorch/memory/pause.jsonl
-allowed-tools: Bash(node *)
+allowed-tools: Bash(myorch *)
 ---
 Refer to CLAUDE.md for build/test/style/workflow rules. Do not deviate.
 # /pause

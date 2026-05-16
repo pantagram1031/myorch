@@ -8,6 +8,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "prepare": "node scripts/prepare.mjs",
     "test": "node --import tsx --test tests/*.test.ts",
     "verify:claude-files": "node --import tsx src/cli.ts verify-claude-files",
     "verify:claude-runtime": "node --import tsx src/cli.ts verify-claude-runtime",
@@ -16,6 +17,24 @@
     "verify:all": "npm run verify && npm run verify:claude-runtime && npm run verify:scenarios && npm run verify:links",
     "verify": "npm test && npm run build && npm run verify:claude-files"
   },
+  "files": [
+    "dist/src/",
+    ".claude/commands/",
+    ".claude/hooks/",
+    ".claude/rules/",
+    ".claude/settings.json",
+    ".claude/statusline.sh",
+    ".claude/myorch.md",
+    ".codex/",
+    "scripts/",
+    "README.md",
+    "README.ko.md",
+    "docs/",
+    "LICENSE",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "CLAUDE.md"
+  ],
   "devDependencies": {
     "@types/node": "^22.15.18",
     "tsx": "^4.19.4",

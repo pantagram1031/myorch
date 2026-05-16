@@ -1,18 +1,14 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
-
-const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 let stdin = "";
 process.stdin.setEncoding("utf8");
 process.stdin.on("data", (chunk) => {
   stdin += chunk;
 });
 process.stdin.on("end", () => {
-  const result = spawnSync("node", [resolve(root, "dist/src/cli.js"), "guard-plan-edit"], {
+  const result = spawnSync("myorch", ["guard-plan-edit"], {
     input: stdin,
-    cwd: root,
+    cwd: process.cwd(),
     encoding: "utf8",
     windowsHide: true
   });

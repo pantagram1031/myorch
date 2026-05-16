@@ -25,7 +25,7 @@ Run:
 or from a shell:
 
 ```powershell
-node dist/src/cli.js status
+myorch status
 ```
 
 Unchecked tasks remain open until their verifier passes. Direct checkbox edits are blocked by the plan guard.
@@ -35,7 +35,7 @@ Unchecked tasks remain open until their verifier passes. Direct checkbox edits a
 Implementation work defaults to Codex:
 
 ```powershell
-node dist/src/cli.js execute-routed implementation
+myorch execute-routed implementation
 ```
 
 The command packages the current task, calls `codex exec`, then runs the same verifier path used by hooks.

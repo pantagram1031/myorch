@@ -1,6 +1,6 @@
 # Architecture
 
-myorch is a project-local orchestrator for Claude Code. Claude Code commands and hooks call `node dist/src/cli.js`; TypeScript modules own routing, ratchet, handoff, compact, statusline, and notification behavior.
+myorch is a globally installed CLI that initializes project-local Claude Code commands, hooks, rules, and memory directories. Claude Code commands and hooks call the `myorch` command; TypeScript modules own routing, ratchet, handoff, compact, statusline, and notification behavior.
 
 ```mermaid
 flowchart TD

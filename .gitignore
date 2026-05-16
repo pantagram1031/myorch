@@ -1,6 +1,9 @@
 # Dependencies and build output
 node_modules/
-dist/
+dist/*
+!dist/src/
+!dist/src/**
+dist/tests/
 
 # Local/private Claude and user notes
 CLAUDE.local.md
