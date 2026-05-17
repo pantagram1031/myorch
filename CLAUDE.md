@@ -32,6 +32,11 @@ This project runs inside Claude Code on Windows native. Never modify global Clau
 - Metareview must cite actual verifier output and reject bare "looks good" responses.
 
 # Critical Rules
+- 토큰 효율 최우선. 모드별 정책 엄수.
+- 70%+ 모드에서 Claude 호출 금지 (verification-exception 예산 내 제외).
+- 5h 블록 리셋 자동 감지, low confidence는 사용자 confirm 대기.
+- OSS 설치 전 별도 branch + verify:all 통과 + protected paths 영향 없음 확인.
+- 모든 자율 결정 침묵 금지. 10종 jsonl에 기록.
 - Do not directly edit `plan.md` checkboxes; only ratchet/verifier commands advance progress.
 - LLM prose cannot mark completion. Zero unchecked ratchet tasks plus verifier PASS is the only completion signal.
 - A `codex` route must invoke Codex CLI unless the CLI is missing or fails, in which case log fallback.

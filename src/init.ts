@@ -15,6 +15,111 @@ const MYORCH_IGNORE = [
   ".claude/debug/",
   ".claude/myorch.local.md"
 ];
+const ROADMAP_SEED = `# ROADMAP
+
+## Priority 1 - Efficiency
+
+- [ ] Apply token percent policy automatically.
+
+### Success criteria
+
+- [ ]
+
+- [ ] Detect 5h block reset and restore Claude authority.
+
+### Success criteria
+
+- [ ]
+
+- [ ] Decide reasoning level autonomously.
+
+### Success criteria
+
+- [ ]
+
+- [ ] Measure metareview ROI.
+
+### Success criteria
+
+- [ ]
+
+## Priority 2 - Autonomous Operation
+
+- [ ] Generate autonomous /goal loop.
+
+### Success criteria
+
+- [ ]
+
+- [ ] Add token guard, automatic sleep, and resume.
+
+### Success criteria
+
+- [ ]
+
+- [ ] Explore OSS candidates and sandbox-install safe matches.
+
+### Success criteria
+
+- [ ]
+
+- [ ] Record every autonomous decision.
+
+### Success criteria
+
+- [ ]
+
+## Priority 3 - Real-World Usability
+
+- [ ] Automatically verify Quick Start in a fresh environment.
+
+### Success criteria
+
+- [ ]
+
+- [ ] Verify npm install after public transition.
+
+### Success criteria
+
+- [ ]
+
+- [ ] Keep demo gif placeholder for manual recording.
+
+### Success criteria
+
+- [ ]
+
+## Priority 4 - Expansion
+
+- [ ] Add macOS/Linux compatibility.
+
+### Success criteria
+
+- [ ]
+
+- [ ] Add myorch update command.
+
+### Success criteria
+
+- [ ]
+
+- [ ] Refresh ARCHITECTURE diagrams.
+
+### Success criteria
+
+- [ ]
+`;
+const PROTECTED_PATHS_SEED = {
+  files: [
+    "src/router.ts",
+    "src/ratchet.ts",
+    "src/enforcement.ts",
+    "src/handoff.ts",
+    "src/token-guard.ts",
+    ".claude/settings.json"
+  ],
+  packageJsonSections: ["bin", "scripts", "prepare"]
+};
 
 export interface InitResult {
   created: string[];
@@ -31,6 +136,13 @@ export async function initProject(root: string, options: { force?: boolean } = {
   await mkdir(join(root, ".myorch", "backups"), { recursive: true });
   await mkdir(join(root, ".myorch", "handover"), { recursive: true });
   result.created.push(".myorch/memory", ".myorch/backups", ".myorch/handover");
+  await seedFile(join(root, "ROADMAP.md"), ROADMAP_SEED, result, options.force === true);
+  await seedFile(
+    join(root, ".myorch", "protected-paths.json"),
+    JSON.stringify(PROTECTED_PATHS_SEED, null, 2) + "\n",
+    result,
+    options.force === true
+  );
 
   await copyDir(join(source, ".claude", "commands"), join(root, ".claude", "commands"), result, options.force === true);
   await copyDir(join(source, ".claude", "rules"), join(root, ".claude", "rules"), result, options.force === true);
@@ -66,6 +178,17 @@ async function copyFileOwned(source: string, target: string, result: InitResult,
   }
   await mkdir(dirname(target), { recursive: true });
   await cp(source, target, { force: true });
+  (exists ? result.updated : result.created).push(relativeDisplay(target));
+}
+
+async function seedFile(target: string, content: string, result: InitResult, force: boolean): Promise<void> {
+  const exists = await pathExists(target);
+  if (exists && !force) {
+    result.skipped.push(relativeDisplay(target));
+    return;
+  }
+  await mkdir(dirname(target), { recursive: true });
+  await writeFile(target, content, "utf8");
   (exists ? result.updated : result.created).push(relativeDisplay(target));
 }
 

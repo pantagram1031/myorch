@@ -77,3 +77,10 @@ test("scenario runner file exists as executable automation entrypoint", async ()
   assert.match(script, /verify:claude-runtime/);
   assert.match(script, /CCUSAGE_MOCK_JSON/);
 });
+
+test("scenario runner does not statically import v2 modules from root dist", async () => {
+  const script = await readFile("scripts/run-scenarios.mjs", "utf8");
+
+  assert.doesNotMatch(script, /from "\.\.\/dist\/src\/(?:autonomous-loop|oss-explorer|reasoning-decider|token-guard)\.js"/);
+  assert.match(script, /importWorkModule/);
+});

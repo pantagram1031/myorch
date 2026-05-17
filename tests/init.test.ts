@@ -31,6 +31,27 @@ test("initProject creates Claude files, memory dirs, import line, and gitignore 
   assert.equal(await exists(join(root, ".myorch", "memory")), true);
   assert.equal(await exists(join(root, ".myorch", "backups")), true);
   assert.equal(await exists(join(root, ".myorch", "handover")), true);
+  assert.equal(await exists(join(root, "ROADMAP.md")), true);
+  assert.equal(await exists(join(root, ".myorch", "protected-paths.json")), true);
+
+  const roadmap = await readFile(join(root, "ROADMAP.md"), "utf8");
+  assert.match(roadmap, /Priority 1 - Efficiency/);
+  assert.match(roadmap, /Priority 2 - Autonomous Operation/);
+  assert.match(roadmap, /Priority 3 - Real-World Usability/);
+  assert.match(roadmap, /Priority 4 - Expansion/);
+  assert.match(roadmap, /Success criteria/);
+
+  const protectedPaths = await readFile(join(root, ".myorch", "protected-paths.json"), "utf8");
+  assert.match(protectedPaths, /src\/router\.ts/);
+  assert.match(protectedPaths, /src\/ratchet\.ts/);
+  assert.match(protectedPaths, /src\/enforcement\.ts/);
+  assert.match(protectedPaths, /src\/handoff\.ts/);
+  assert.match(protectedPaths, /src\/token-guard\.ts/);
+  assert.match(protectedPaths, /\.claude\/settings\.json/);
+  assert.match(protectedPaths, /packageJsonSections/);
+  assert.match(protectedPaths, /"bin"/);
+  assert.match(protectedPaths, /"scripts"/);
+  assert.match(protectedPaths, /"prepare"/);
 
   const claude = await readFile(join(root, "CLAUDE.md"), "utf8");
   assert.match(claude, /Do not overwrite me/);
@@ -47,14 +68,27 @@ test("initProject is idempotent, refreshes myorch.md, and force only overwrites 
   await initProject(root);
   await writeFile(join(root, ".claude", "myorch.md"), "custom local edit\n", "utf8");
   await writeFile(join(root, ".claude", "commands", "goal.md"), "custom command\n", "utf8");
+  await writeFile(join(root, "ROADMAP.md"), "# Custom roadmap\n", "utf8");
+  await writeFile(
+    join(root, ".myorch", "protected-paths.json"),
+    JSON.stringify({ files: ["custom.ts"], packageJsonSections: ["dependencies"] }, null, 2) + "\n",
+    "utf8"
+  );
 
   await initProject(root);
   assert.match(await readFile(join(root, ".claude", "myorch.md"), "utf8"), /myorch/);
   assert.equal(await readFile(join(root, ".claude", "commands", "goal.md"), "utf8"), "custom command\n");
+  assert.equal(await readFile(join(root, "ROADMAP.md"), "utf8"), "# Custom roadmap\n");
+  assert.equal(
+    await readFile(join(root, ".myorch", "protected-paths.json"), "utf8"),
+    JSON.stringify({ files: ["custom.ts"], packageJsonSections: ["dependencies"] }, null, 2) + "\n"
+  );
   const claude = await readFile(join(root, "CLAUDE.md"), "utf8");
   assert.equal((claude.match(/@\.claude\/myorch\.md/g) ?? []).length, 1);
 
   await initProject(root, { force: true });
   assert.match(await readFile(join(root, ".claude", "myorch.md"), "utf8"), /myorch/);
   assert.match(await readFile(join(root, ".claude", "commands", "goal.md"), "utf8"), /myorch/);
+  assert.match(await readFile(join(root, "ROADMAP.md"), "utf8"), /Priority 1 - Efficiency/);
+  assert.match(await readFile(join(root, ".myorch", "protected-paths.json"), "utf8"), /src\/token-guard\.ts/);
 });

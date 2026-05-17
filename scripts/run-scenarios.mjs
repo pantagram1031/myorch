@@ -2,6 +2,7 @@ import { mkdtemp, cp, rm, readFile, writeFile, mkdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
 import { spawn } from "node:child_process";
+import { pathToFileURL } from "node:url";
 
 const root = process.cwd();
 // Runtime slash recognition is verified separately by verify:claude-runtime.
@@ -24,6 +25,10 @@ const results = [];
 try {
   await run("npm", ["install"], {});
   await run("npm", ["run", "build"], {});
+  const { chooseNextGoal, evaluateSafetyGuards } = await importWorkModule("autonomous-loop");
+  const { evaluateOssCandidate } = await importWorkModule("oss-explorer");
+  const { decideClaudeModel, decideCodexEffort } = await importWorkModule("reasoning-decider");
+  const { decideAuthorityMode, detectBlockReset } = await importWorkModule("token-guard");
 
   await scenario("scenario1-goal", async () => {
     const output = await runNode(["dist/src/cli.js", "goal-start", "add a trivial function"], {});
@@ -231,6 +236,111 @@ try {
     };
   });
 
+  await scenario("scenario13-claude-paused-at-70", async () => {
+    const decision = decideAuthorityMode({ percent: 70 });
+    if (decision.mode !== "claude-paused") {
+      throw new Error(`expected claude-paused mode at 70%, got ${decision.mode}`);
+    }
+    if (decision.allowClaudeAutonomous !== false) {
+      throw new Error(`expected allowClaudeAutonomous false at 70%, got ${decision.allowClaudeAutonomous}`);
+    }
+    return { decision };
+  });
+
+  await scenario("scenario14-block-reset-restores-claude", async () => {
+    const reset = detectBlockReset(
+      { percent: 74, blockId: "old", observedAt: "2026-05-17T00:00:00.000Z" },
+      { percent: 3, blockId: "new", observedAt: "2026-05-17T00:05:00.000Z" }
+    );
+    if (reset.confidence !== "high") {
+      throw new Error(`expected high confidence block reset, got ${reset.confidence ?? "undefined"}`);
+    }
+    return { reset };
+  });
+
+  await scenario("scenario15-reasoning-decisions", async () => {
+    const normal = decideClaudeModel("normal");
+    const efficient = decideClaudeModel("efficient");
+    const codex = decideCodexEffort({ remainingPercent: 19, supportsReasoningEffort: true });
+    if (normal.model !== "opus") {
+      throw new Error(`expected normal mode to choose opus, got ${normal.model ?? "undefined"}`);
+    }
+    if (efficient.model !== "sonnet") {
+      throw new Error(`expected efficient mode to choose sonnet, got ${efficient.model ?? "undefined"}`);
+    }
+    if (codex.effort !== "low") {
+      throw new Error(`expected low codex effort, got ${codex.effort}`);
+    }
+    return { normal, efficient, codex };
+  });
+
+  await scenario("scenario16-autonomous-goal-one-cycle", async () => {
+    const goal = chooseNextGoal({
+      roadmap: [
+        "# ROADMAP",
+        "",
+        "- [ ] First unfinished ROADMAP item",
+        "- [x] Already done",
+        "- [ ] Later item"
+      ].join("\n"),
+      latestInsight: "Recent verifier insight should stay visible for the next autonomous cycle.",
+      mode: "efficient"
+    });
+    if (!goal.includes("First unfinished ROADMAP item")) {
+      throw new Error(`expected first unfinished ROADMAP item in goal, got ${goal}`);
+    }
+    if (!goal.includes("Latest insight:")) {
+      throw new Error(`expected goal to include latest insight label, got ${goal}`);
+    }
+    if (!goal.includes("Recent verifier insight")) {
+      throw new Error(`expected goal to include insight content, got ${goal}`);
+    }
+    return { goal };
+  });
+
+  await scenario("scenario17-oss-sandbox-policy", async () => {
+    const safe = evaluateOssCandidate({
+      name: "safe-dependency-only",
+      stars: 500,
+      lastCommitDaysAgo: 10,
+      license: "MIT",
+      dependencyCount: 3,
+      auditOk: true,
+      touchedPaths: ["package.json"],
+      packageJsonSections: ["dependencies"]
+    });
+    const protectedPath = evaluateOssCandidate({
+      name: "protected-path-touch",
+      stars: 500,
+      lastCommitDaysAgo: 10,
+      license: "MIT",
+      dependencyCount: 3,
+      auditOk: true,
+      touchedPaths: ["src/router.ts"]
+    });
+    if (safe.action !== "sandbox-install") {
+      throw new Error(`expected safe candidate sandbox-install, got ${safe.action}`);
+    }
+    if (protectedPath.action !== "protected-deferred") {
+      throw new Error(`expected protected path candidate protected-deferred, got ${protectedPath.action}`);
+    }
+    return { safe, protectedPath };
+  });
+
+  await scenario("scenario18-safety-guard-cycle-halt", async () => {
+    const guard = evaluateSafetyGuards({
+      tokenPercent: 50,
+      cycleCount: 50,
+      consecutivePriorityFailures: 0,
+      pushFailures: 0,
+      roadmapComplete: false
+    });
+    if (guard.halt !== true) {
+      throw new Error(`expected halt at cycleCount 50, got ${guard.halt}`);
+    }
+    return { guard };
+  });
+
   await scenario("scenario7-real-codex-smoke", async () => {
     const output = await runQuoted("codex", ["exec", "--skip-git-repo-check", "--cd", work, "Return exactly: codex-smoke-ok"], {}, { timeoutMs: 180000 });
     if (!output.toLowerCase().includes("codex-smoke-ok")) throw new Error(`expected real codex smoke response, got ${output}`);
@@ -351,4 +461,8 @@ async function ensureMemory(kind) {
   const file = join(work, ".myorch", "memory", `${kind}.jsonl`);
   const content = await readFile(file, "utf8");
   if (!content.trim()) throw new Error(`${kind} memory is empty`);
+}
+
+async function importWorkModule(name) {
+  return import(pathToFileURL(join(work, "dist", "src", `${name}.js`)).href);
 }

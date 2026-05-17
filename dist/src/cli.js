@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
+import { appendFile, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { spawn } from "node:child_process";
 import { advanceRatchet, parsePlan } from "./ratchet.js";
@@ -31,8 +31,17 @@ async function main() {
         case "status":
             await statusCommand();
             break;
+        case "resume":
+            await resumeCommand();
+            break;
         case "switch":
             await switchCommand(args);
+            break;
+        case "confirm-reset":
+            await manualResetDecisionCommand("confirm-reset");
+            break;
+        case "reject-reset":
+            await manualResetDecisionCommand("reject-reset");
             break;
         case "handoff":
             await handoffCommand(args);
@@ -82,8 +91,11 @@ async function main() {
         case "run-verifier":
             await runCurrentVerifier();
             break;
+        case "oss-review":
+            await ossReviewCommand();
+            break;
         default:
-            console.log("usage: myorch <init|goal-start|route|handoff|execute-routed|metareview-auto|compact-backup|compact-record|compact-restore|statusline|notify|next|status|switch|verify-and-advance|guard-plan-edit|verify-claude-files|verify-claude-runtime|run-verifier>");
+            console.log("usage: myorch <init|goal-start|route|handoff|execute-routed|metareview-auto|compact-backup|compact-record|compact-restore|statusline|notify|next|status|resume|switch|confirm-reset|reject-reset|oss-review|verify-and-advance|guard-plan-edit|verify-claude-files|verify-claude-runtime|run-verifier>");
             process.exitCode = command ? 1 : 0;
     }
 }
@@ -171,6 +183,10 @@ async function statusCommand() {
     const content = await readFile(join(cwd, "plan.md"), "utf8");
     console.log(JSON.stringify(summarizePlanStatus(content), null, 2));
 }
+async function resumeCommand() {
+    const sleepState = await readJson(join(cwd, ".myorch", "sleep-state.json"));
+    console.log(JSON.stringify(sleepState ?? { status: "no-sleep-state" }));
+}
 async function switchCommand(args) {
     const model = args[0];
     if (model !== "claude" && model !== "codex") {
@@ -181,6 +197,11 @@ async function switchCommand(args) {
     await appendMemoryRecord(cwd, "override", { model });
     await writeFile(join(cwd, ".myorch", "manual-override"), model, "utf8");
     console.log(`manual override set to ${model}`);
+}
+async function manualResetDecisionCommand(decision) {
+    const dir = join(cwd, ".myorch", "memory");
+    await mkdir(dir, { recursive: true });
+    await appendFile(join(dir, "decisions.jsonl"), JSON.stringify({ reason: "manual-reset-decision", decision }) + "\n", "utf8");
 }
 async function runCurrentVerifier() {
     await verifyAndAdvanceCommand();
@@ -286,6 +307,10 @@ async function guardPlanEditCommand() {
 async function writeSettingsCommand() {
     await writeFile(join(cwd, ".claude", "settings.json"), JSON.stringify(buildClaudeSettings(), null, 2) + "\n", "utf8");
     console.log(".claude/settings.json written");
+}
+async function ossReviewCommand() {
+    const pending = await readOptional(join(cwd, ".myorch", "memory", "oss-pending-merge.jsonl"));
+    process.stdout.write(pending);
 }
 async function verifyClaudeFiles() {
     const checks = [];

@@ -2,6 +2,8 @@ export type ModelName = "claude" | "codex";
 
 export type TaskKind = "planning" | "evaluation" | "implementation" | "metareview";
 
+export type AuthorityMode = "normal" | "efficient" | "codex-leaning" | "claude-paused" | "halt";
+
 export interface UsageSnapshot {
   claudePercent?: number;
   codexPercent?: number;
